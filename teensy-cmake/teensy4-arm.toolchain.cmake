@@ -22,7 +22,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 cmake_minimum_required(VERSION 2.8.3)
-message("Processing toolchain file v3")
+message("Processing toolchain file v4")
 
 # Add current directory to CMake Module path automatically
 
@@ -50,10 +50,10 @@ endif()
 
 set(TEENSY_LIB_ROOT "${TEENSY_BASE}/libraries")
 set(TEENSY_CORES_ROOT "${TEENSY_BASE}/cores")# CACHE PATH "Path to the Teensy 'cores' repository")
-set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy3")
+set(TEENSY_ROOT "${TEENSY_CORES_ROOT}/teensy4")
 set(ARDUINO_LIB_ROOT "${ARDUINO_SDK_PATH}/libraries")# CACHE PATH "Path to the Arduino library directory")
 
-set(TEENSY_MODEL "MK20DX256" CACHE STRING "Model of the Teensy MCU")
+set(TEENSY_MODEL "IMXRT1062" CACHE STRING "Model of the Teensy MCU")
 
 file(READ ${ARDUINO_SDK_PATH}/lib/version.txt ARDUINO_VERSION)
 string(REGEX REPLACE "-.*" "" ARDUINO_VERSION ${ARDUINO_VERSION})
@@ -64,7 +64,7 @@ string(REGEX MATCH "[\n\r]version=([^\n\r]*)" TEENSYDUINO_VERSION ${TEENSYDUINO_
 string(REGEX MATCH "[0-9].*" TEENSYDUINO_VERSION ${TEENSYDUINO_VERSION})
 string(REPLACE "." "" TEENSYDUINO_VERSION ${TEENSYDUINO_VERSION})
 
-set(TEENSY_FREQUENCY "96" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
+set(TEENSY_FREQUENCY "600" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
 set_property(CACHE TEENSY_FREQUENCY PROPERTY STRINGS 96 72 48 24 16 8 4 2)
 
 set(TEENSY_USB_MODE "SERIAL" CACHE STRING "What kind of USB device the Teensy should emulate")
@@ -76,7 +76,7 @@ set(CMAKE_CROSSCOMPILING 1)
 
 set(CMAKE_C_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-gcc" CACHE PATH "gcc" FORCE)
 set(CMAKE_CXX_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-g++" CACHE PATH "g++" FORCE)
-set(CMAKE_ASM_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-gcc" CACHE PATH "gcc" FORCE)
+set(CMAKE_ASM_COMPILER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-as" CACHE PATH "as" FORCE)
 set(CMAKE_AR "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ar" CACHE PATH "archive" FORCE)
 set(CMAKE_LINKER "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ld" CACHE PATH "linker" FORCE)
 set(CMAKE_NM "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-nm$" CACHE PATH "nm" FORCE)
@@ -85,25 +85,29 @@ set(CMAKE_OBJDUMP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-objdump" CACHE PATH "objdump"
 set(CMAKE_STRIP "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-strip" CACHE PATH "strip" FORCE)
 set(CMAKE_RANLIB "${TOOLCHAIN_ROOT}/bin/${TRIPLE}-ranlib" CACHE PATH "ranlib" FORCE)
 
+
+
 include_directories("${TEENSY_ROOT}")
-#-mfloat-abi=hard -mfpu=fpv4-sp-d16
-set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb ")
+
+set(TARGET_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv5-d16 ")
 set(BASE_FLAGS "-Os -Wall -nostdlib -ffunction-sections -fdata-sections ${TARGET_FLAGS}")
 
 set(CMAKE_C_FLAGS "${BASE_FLAGS}  -DTIME_T=1421620748" CACHE STRING "c flags") # XXX Generate TIME_T dynamically.
 set(CMAKE_CXX_FLAGS "${BASE_FLAGS} -fno-exceptions -fno-rtti -felide-constructors  -std=c++14 " CACHE STRING "c++ flags")
 
-set(LINKER_FLAGS "-Os -Wl,--gc-sections ${TARGET_FLAGS} -T${TEENSY_ROOT}/mk20dx256.ld" )
+set(LINKER_FLAGS "-Os -Wl,--gc-sections ${TARGET_FLAGS} -T${TEENSY_ROOT}/imxrt1062.ld" )
 set(LINKER_LIBS "-lm" )
 set(CMAKE_SHARED_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 set(CMAKE_MODULE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
 set(CMAKE_EXE_LINKER_FLAGS "${LINKER_FLAGS}" CACHE STRING "linker flags" FORCE)
-SET(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_ASM_COMPILER> ${TARGET_FLAGS} -o <OBJECT> -c <SOURCE>")
+SET(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_ASM_COMPILER> ${TARGET_FLAGS} -o <OBJECT> <SOURCE>")
+
 
 # Do not pass flags like '-ffunction-sections -fdata-sections' to the linker.
 # This causes undefined symbol errors when linking.
 set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> -o <TARGET>  <OBJECTS> <LINK_LIBRARIES> ${LINKER_LIBS}" CACHE STRING "Linker command line" FORCE)
 
+add_definitions("-DARDUINO_TEENSY40")
 add_definitions("-DARDUINO=${ARDUINO_VERSION}")
 add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
 add_definitions("-D__${TEENSY_MODEL}__")
@@ -114,42 +118,42 @@ add_definitions(-MMD)
 add_definitions(-D_GNU_SOURCE)
 
 set(TEENSY_C_CORE_FILES
-    ${TEENSY_ROOT}/math_helper.c
     ${TEENSY_ROOT}/analog.c
-    ${TEENSY_ROOT}/serial1.c
-    ${TEENSY_ROOT}/serial2.c
-    ${TEENSY_ROOT}/serial3.c
-    ${TEENSY_ROOT}/usb_mem.c
-    ${TEENSY_ROOT}/usb_dev.c
-    ${TEENSY_ROOT}/usb_midi.c
-    ${TEENSY_ROOT}/usb_mouse.c 
+    ${TEENSY_ROOT}/clockspeed.c
+    ${TEENSY_ROOT}/bootdata.c
+    ${TEENSY_ROOT}/delay.c
+    ${TEENSY_ROOT}/digital.c
+    ${TEENSY_ROOT}/interrupt.c
+    ${TEENSY_ROOT}/pwm.c
+    ${TEENSY_ROOT}/rtc.c
+    ${TEENSY_ROOT}/tempmon.c
+    ${TEENSY_ROOT}/usb.c
     ${TEENSY_ROOT}/usb_desc.c
-    ${TEENSY_ROOT}/usb_keyboard.c
-    ${TEENSY_ROOT}/usb_joystick.c
     ${TEENSY_ROOT}/usb_rawhid.c
     ${TEENSY_ROOT}/usb_seremu.c
     ${TEENSY_ROOT}/usb_serial.c
-    ${TEENSY_ROOT}/mk20dx128.c
-    ${TEENSY_ROOT}/touch.c
-    ${TEENSY_ROOT}/pins_teensy.c
+    ${TEENSY_ROOT}/startup.c
     ${TEENSY_ROOT}/keylayouts.c
     ${TEENSY_ROOT}/nonstd.c
     ${TEENSY_ROOT}/eeprom.c
 )
 
 set(TEENSY_CXX_CORE_FILES
-    ${TEENSY_ROOT}/main.cpp
     ${TEENSY_ROOT}/usb_inst.cpp
     ${TEENSY_ROOT}/yield.cpp
+    ${TEENSY_ROOT}/HardwareSerial.cpp 
     ${TEENSY_ROOT}/HardwareSerial1.cpp 
     ${TEENSY_ROOT}/HardwareSerial2.cpp
     ${TEENSY_ROOT}/HardwareSerial3.cpp
+    ${TEENSY_ROOT}/HardwareSerial4.cpp 
+    ${TEENSY_ROOT}/HardwareSerial5.cpp
+    ${TEENSY_ROOT}/HardwareSerial6.cpp
+    ${TEENSY_ROOT}/HardwareSerial7.cpp
+    ${TEENSY_ROOT}/HardwareSerial8.cpp
     ${TEENSY_ROOT}/WMath.cpp
     ${TEENSY_ROOT}/Print.cpp
-    
+    ${TEENSY_ROOT}/yield.cpp
     ${TEENSY_ROOT}/new.cpp
-    ${TEENSY_ROOT}/usb_flightsim.cpp
-    ${TEENSY_ROOT}/avr_emulation.cpp
     ${TEENSY_ROOT}/IPAddress.cpp
     ${TEENSY_ROOT}/Stream.cpp
     ${TEENSY_ROOT}/Tone.cpp
@@ -158,6 +162,7 @@ set(TEENSY_CXX_CORE_FILES
     ${TEENSY_ROOT}/AudioStream.cpp
     ${TEENSY_ROOT}/WString.cpp
     ${TEENSY_ROOT}/EventResponder.cpp
+    ${TEENSY_ROOT}/main.cpp
 )
 
 macro(add_teensy_executable TARGET_NAME)
@@ -178,10 +183,10 @@ macro(add_teensy_executable TARGET_NAME)
     else()
         message(FATAL_ERROR "Invalid USB mode: ${TEENSY_USB_MODE}")
     endif()
-    set(TARGET_FLAGS "-D${USB_MODE_DEF} -DF_CPU=${TEENSY_FREQUENCY}000000 ${TEENSY_FLAGS}")
+    set(TARGET_FLAGS "-D${USB_MODE_DEF} -DF_CPU=${TEENSY_FREQUENCY}000000 ${TEENSY_FLAGS} ")
     set(TARGET_C_FLAGS "${TARGET_FLAGS} ${TEENSY_C_FLAGS}")
     set(TARGET_CXX_FLAGS "${TARGET_FLAGS} ${TEENSY_CXX_FLAGS}")
-
+ 
     # Build the Teensy 'core' library.
     # Per-target because of preprocessor definitions.
     add_library(${TARGET_NAME}_TeensyCore
@@ -194,6 +199,8 @@ macro(add_teensy_executable TARGET_NAME)
         PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
 
     set(FINAL_SOURCES ${TEENSY_LIB_SOURCES})
+
+    
     foreach(SOURCE ${ARGN})
         get_filename_component(SOURCE_EXT ${SOURCE} EXT)
         get_filename_component(SOURCE_NAME ${SOURCE} NAME_WE)
@@ -220,11 +227,12 @@ macro(add_teensy_executable TARGET_NAME)
             configure_file("${TEMPLATE_FILE}" "${GEN_SOURCE}")
             set(FINAL_SOURCES ${FINAL_SOURCES} ${GEN_SOURCE})
         else()
-            set(FINAL_SOURCES ${FINAL_SOURCES} ${SOURCE})
+	    #This only adds the sketch itself, not libraries
+	    set(FINAL_SOURCES ${FINAL_SOURCES} ${SOURCE})
         endif()
     endforeach(SOURCE ${ARGN})
-    
-    message("Parsing sources: ${FINAL_SOURCES}") 
+
+    message("Parsing sources: ${FINAL_SOURCES}")
     #Library source files are already in FINAL_SOURCES
     foreach(SOURCE ${FINAL_SOURCES})
         message("Checking ${SOURCE}")
@@ -254,8 +262,8 @@ macro(add_teensy_executable TARGET_NAME)
     
     # Build the ELF executable.
     add_executable(${TARGET_NAME} ${FINAL_SOURCES})
-    set_source_files_properties(${FINAL_SOURCES}
-        PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
+    #set_source_files_properties(${FINAL_SOURCES}
+    #    PROPERTIES COMPILE_FLAGS ${TARGET_CXX_FLAGS})
     target_link_libraries(${TARGET_NAME} ${TARGET_NAME}_TeensyCore)
     set_target_properties(${TARGET_NAME} PROPERTIES
         OUTPUT_NAME ${TARGET_NAME}
@@ -291,7 +299,9 @@ macro(import_arduino_library LIB_NAME)
     set(ARD_LIB_DIR "${ARDUINO_LIB_ROOT}/${LIB_NAME}/src")
     set(TEN_LIB_DIR "${TEENSY_LIB_ROOT}/${LIB_NAME}")
 
-    message("Looking for library in: ${ARD_LIB_DIR}")
+    message("Looking for Arduino library in: ${ARD_LIB_DIR}")
+    message("Looking for Teensy library in: ${TEN_LIB_DIR}")
+
     if(NOT EXISTS "${ARD_LIB_DIR}" AND NOT EXISTS ${TEN_LIB_DIR})
         message(FATAL_ERROR "Could not find the directory for library ${LIB_NAME}")
     endif(NOT EXISTS "${ARD_LIB_DIR}" AND NOT EXISTS ${TEN_LIB_DIR})
@@ -319,6 +329,8 @@ macro(import_arduino_library LIB_NAME)
     foreach(SOURCE_ASM ${SOURCES_ASM})
         set(TEENSY_LIB_SOURCES ${TEENSY_LIB_SOURCES} ${SOURCE_ASM})
     endforeach(SOURCE_ASM ${SOURCES_ASM})
+
+    #message("Using sources: ${TEENSY_LIB_SOURCES}")
 endmacro(import_arduino_library)
 
 macro(_add_sketch_internal SKETCH_DIR SKETCH)

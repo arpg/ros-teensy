@@ -17,6 +17,7 @@ if(NOT ARDUINO_SDK_PATH)
             /opt/local/arduino
             /opt/arduino
             /usr/local/share/arduino
+	    /usr/share/arduino
             ~/arduino
             ~/arduino-1.6.5
             )
