@@ -119,6 +119,9 @@ set(TEENSY_C_CORE_FILES
     ${TEENSY_ROOT}/serial1.c
     ${TEENSY_ROOT}/serial2.c
     ${TEENSY_ROOT}/serial3.c
+    ${TEENSY_ROOT}/serial4.c
+    ${TEENSY_ROOT}/serial5.c
+    ${TEENSY_ROOT}/serial6.c
     ${TEENSY_ROOT}/usb_mem.c
     ${TEENSY_ROOT}/usb_dev.c
     ${TEENSY_ROOT}/usb_midi.c
@@ -141,12 +144,24 @@ set(TEENSY_CXX_CORE_FILES
     ${TEENSY_ROOT}/main.cpp
     ${TEENSY_ROOT}/usb_inst.cpp
     ${TEENSY_ROOT}/yield.cpp
+    ${TEENSY_ROOT}/HardwareSerial.cpp 
     ${TEENSY_ROOT}/HardwareSerial1.cpp 
     ${TEENSY_ROOT}/HardwareSerial2.cpp
     ${TEENSY_ROOT}/HardwareSerial3.cpp
+    ${TEENSY_ROOT}/HardwareSerial4.cpp 
+    ${TEENSY_ROOT}/HardwareSerial5.cpp
+    ${TEENSY_ROOT}/HardwareSerial6.cpp
     ${TEENSY_ROOT}/WMath.cpp
     ${TEENSY_ROOT}/Print.cpp
-    
+    ${TEENSY_ROOT}/serialEvent.cpp
+    ${TEENSY_ROOT}/serialEvent1.cpp
+    ${TEENSY_ROOT}/serialEvent2.cpp
+    ${TEENSY_ROOT}/serialEvent3.cpp
+    ${TEENSY_ROOT}/serialEvent4.cpp
+    ${TEENSY_ROOT}/serialEvent5.cpp
+    ${TEENSY_ROOT}/serialEvent6.cpp
+    ${TEENSY_ROOT}/serialEventUSB1.cpp
+    ${TEENSY_ROOT}/serialEventUSB2.cpp
     ${TEENSY_ROOT}/new.cpp
     ${TEENSY_ROOT}/usb_flightsim.cpp
     ${TEENSY_ROOT}/avr_emulation.cpp

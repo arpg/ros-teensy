@@ -68,7 +68,7 @@ set(TEENSY_FREQUENCY "600" CACHE STRING "Frequency of the Teensy MCU (Mhz)")
 set_property(CACHE TEENSY_FREQUENCY PROPERTY STRINGS 96 72 48 24 16 8 4 2)
 
 set(TEENSY_USB_MODE "SERIAL" CACHE STRING "What kind of USB device the Teensy should emulate")
-set_property(CACHE TEENSY_USB_MODE PROPERTY STRINGS SERIAL HID SERIAL_HID MIDI RAWHID FLIGHTSIM)
+set_property(CACHE TEENSY_USB_MODE PROPERTY STRINGS SERIAL DUAL_SERIAL TRIPLE_SERIAL HID SERIAL_HID MIDI RAWHID FLIGHTSIM)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -107,7 +107,7 @@ SET(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_ASM_COMPILER> ${TARGET_FLAGS} -o <OBJECT> <
 # This causes undefined symbol errors when linking.
 set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> -o <TARGET>  <OBJECTS> <LINK_LIBRARIES> ${LINKER_LIBS}" CACHE STRING "Linker command line" FORCE)
 
-add_definitions("-DARDUINO_TEENSY40")
+add_definitions("-DARDUINO_TEENSY41")
 add_definitions("-DARDUINO=${ARDUINO_VERSION}")
 add_definitions("-DTEENSYDUINO=${TEENSYDUINO_VERSION}")
 add_definitions("-D__${TEENSY_MODEL}__")
@@ -132,6 +132,9 @@ set(TEENSY_C_CORE_FILES
     ${TEENSY_ROOT}/usb_rawhid.c
     ${TEENSY_ROOT}/usb_seremu.c
     ${TEENSY_ROOT}/usb_serial.c
+    ${TEENSY_ROOT}/usb_serial2.c
+    ${TEENSY_ROOT}/usb_serial3.c
+    ${TEENSY_ROOT}/usb_touch.c
     ${TEENSY_ROOT}/startup.c
     ${TEENSY_ROOT}/keylayouts.c
     ${TEENSY_ROOT}/nonstd.c
@@ -150,6 +153,17 @@ set(TEENSY_CXX_CORE_FILES
     ${TEENSY_ROOT}/HardwareSerial6.cpp
     ${TEENSY_ROOT}/HardwareSerial7.cpp
     ${TEENSY_ROOT}/HardwareSerial8.cpp
+    ${TEENSY_ROOT}/serialEvent.cpp
+    ${TEENSY_ROOT}/serialEvent1.cpp
+    ${TEENSY_ROOT}/serialEvent2.cpp
+    ${TEENSY_ROOT}/serialEvent3.cpp
+    ${TEENSY_ROOT}/serialEvent4.cpp
+    ${TEENSY_ROOT}/serialEvent5.cpp
+    ${TEENSY_ROOT}/serialEvent6.cpp
+    ${TEENSY_ROOT}/serialEvent7.cpp
+    ${TEENSY_ROOT}/serialEvent8.cpp
+    ${TEENSY_ROOT}/serialEventUSB1.cpp
+    ${TEENSY_ROOT}/serialEventUSB2.cpp
     ${TEENSY_ROOT}/WMath.cpp
     ${TEENSY_ROOT}/Print.cpp
     ${TEENSY_ROOT}/yield.cpp
@@ -163,6 +177,7 @@ set(TEENSY_CXX_CORE_FILES
     ${TEENSY_ROOT}/WString.cpp
     ${TEENSY_ROOT}/EventResponder.cpp
     ${TEENSY_ROOT}/main.cpp
+    
 )
 
 macro(add_teensy_executable TARGET_NAME)
@@ -180,6 +195,8 @@ macro(add_teensy_executable TARGET_NAME)
         set(USB_MODE_DEF USB_RAWHID)
     elseif(${TEENSY_USB_MODE} STREQUAL FLIGHTSIM)
         set(USB_MODE_DEF USB_FLIGHTSIM)
+    elseif(${TEENSY_USB_MODE} STREQUAL TRIPLE_SERIAL)
+        set(USB_MODE_DEF USB_TRIPLE_SERIAL)
     else()
         message(FATAL_ERROR "Invalid USB mode: ${TEENSY_USB_MODE}")
     endif()
@@ -297,7 +314,13 @@ macro(import_arduino_library LIB_NAME)
 
     # Look for library in arduino and teensy root library folders
     set(ARD_LIB_DIR "${ARDUINO_LIB_ROOT}/${LIB_NAME}/src")
-    set(TEN_LIB_DIR "${TEENSY_LIB_ROOT}/${LIB_NAME}")
+    set(TEN_LIB_DIR "${TEENSY_LIB_ROOT}/${LIB_NAME}/src")
+
+   #Some libs have /src, others don't
+   if(NOT EXISTS ${TEN_LIB_DIR})
+   	  #message("Library ${LIB_NAME}: src subdir ${TEN_LIB_DIR} not found, using root")
+   	  set(TEN_LIB_DIR "${TEENSY_LIB_ROOT}/${LIB_NAME}")
+   endif(NOT EXISTS ${TEN_LIB_DIR})	
 
     message("Looking for Arduino library in: ${ARD_LIB_DIR}")
     message("Looking for Teensy library in: ${TEN_LIB_DIR}")
@@ -317,15 +340,15 @@ macro(import_arduino_library LIB_NAME)
     include_directories("${LIB_DIR}")
     
     # Mark source files to be built along with the sketch code.
-    file(GLOB SOURCES_CPP ABSOLUTE "${LIB_DIR}/*.cpp")
+    file(GLOB_RECURSE SOURCES_CPP ABSOLUTE "${LIB_DIR}/*.cpp")
     foreach(SOURCE_CPP ${SOURCES_CPP})
         set(TEENSY_LIB_SOURCES ${TEENSY_LIB_SOURCES} ${SOURCE_CPP})
     endforeach(SOURCE_CPP ${SOURCES_CPP})
-    file(GLOB SOURCES_C ABSOLUTE "${LIB_DIR}/*.c")
+    file(GLOB_RECURSE SOURCES_C ABSOLUTE "${LIB_DIR}/*.c")
     foreach(SOURCE_C ${SOURCES_C})
         set(TEENSY_LIB_SOURCES ${TEENSY_LIB_SOURCES} ${SOURCE_C})
     endforeach(SOURCE_C ${SOURCES_C})
-    file(GLOB SOURCES_ASM ABSOLUTE "${LIB_DIR}/*.S")
+    file(GLOB_RECURSE SOURCES_ASM ABSOLUTE "${LIB_DIR}/*.S")
     foreach(SOURCE_ASM ${SOURCES_ASM})
         set(TEENSY_LIB_SOURCES ${TEENSY_LIB_SOURCES} ${SOURCE_ASM})
     endforeach(SOURCE_ASM ${SOURCES_ASM})
